@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Network Images</title>
+</head>
+<body>
+    <div id="NetworkImagesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="NetworkImagesConfigForm">
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="RepositoryUrl">Repository URL</label>
+                        <input id="RepositoryUrl" name="RepositoryUrl" type="text" is="emby-input" />
+                        <div class="fieldDescription">The base URL of the artwork repository containing studios.json</div>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var NetworkImagesConfig = {
+                pluginUniqueId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+            };
+
+            document.querySelector('#NetworkImagesConfigPage')
+                .addEventListener('pageshow', function() {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(NetworkImagesConfig.pluginUniqueId).then(function (config) {
+                        document.querySelector('#RepositoryUrl').value = config.RepositoryUrl;
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+            document.querySelector('#NetworkImagesConfigForm')
+                .addEventListener('submit', function(e) {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(NetworkImagesConfig.pluginUniqueId).then(function (config) {
+                    config.RepositoryUrl = document.querySelector('#RepositoryUrl').value;
+                    ApiClient.updatePluginConfiguration(NetworkImagesConfig.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
+
+                e.preventDefault();
+                return false;
+            });
+        </script>
+    </div>
+</body>
+</html>
