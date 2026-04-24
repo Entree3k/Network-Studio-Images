@@ -14,15 +14,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def replace_required(path: Path, pattern: str, replacement: str) -> None:
-    text = path.read_text(encoding="utf-8")
-    updated = re.sub(pattern, replacement, text, count=1, flags=re.MULTILINE)
-    if updated == text:
-        raise RuntimeError(f"Pattern not found in {path}: {pattern}")
-
-    path.write_text(updated, encoding="utf-8")
-
-
 def update_directory_build_props(version: str) -> None:
     path = ROOT / "Directory.Build.props"
     text = path.read_text(encoding="utf-8")
@@ -40,21 +31,33 @@ def update_directory_build_props(version: str) -> None:
 
 def update_build_yaml(version: str) -> None:
     path = ROOT / "build.yaml"
-    replace_required(path, r'^version: ".*"$', f'version: "{version}"')
+    lines = path.read_text(encoding="utf-8").splitlines()
+    version_updated = False
+    changelog_updated = False
 
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
     for index, line in enumerate(lines):
-        if line == "changelog: >":
+        match = re.match(r"^(\s*version\s*:\s*).*$", line)
+        if match:
+            lines[index] = f'{match.group(1)}"{version}"'
+            version_updated = True
+            continue
+
+        if re.match(r"^\s*changelog\s*:\s*>\s*$", line):
             next_index = index + 1
             while next_index < len(lines) and lines[next_index].startswith("  "):
                 del lines[next_index]
 
             lines.insert(next_index, f"  Release v{version}")
-            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            return
+            changelog_updated = True
+            break
 
-    raise RuntimeError(f"Changelog block not found in {path}")
+    if not version_updated:
+        raise RuntimeError(f"version field not found in {path}")
+
+    if not changelog_updated:
+        raise RuntimeError(f"changelog block not found in {path}")
+
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def update_manifest(version: str, checksum: str) -> None:
