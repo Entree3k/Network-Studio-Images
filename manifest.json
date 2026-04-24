@@ -10,11 +10,11 @@
     "versions": [
       {
         "version": "1.0.0.0",
-        "changelog": "Initial release",
+        "changelog": "Release v1.0.0.0",
         "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/Entree3k/Network-Studio-Images/releases/download/v1.0.0/network-images-1.0.0.0.zip",
-        "checksum": "1B34C29CEF34A963FE612C4BF6D54F2C",
-        "timestamp": "2026-04-23T00:00:00Z"
+        "sourceUrl": "https://github.com/Entree3k/Network-Studio-Images/releases/download/v1.0.0.0/network-images-1.0.0.0.zip",
+        "checksum": "19F87B86BB886F39346277E28D4B15E2",
+        "timestamp": "2026-04-24T05:22:13Z"
       }
     ]
   }
