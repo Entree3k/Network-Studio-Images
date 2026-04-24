@@ -6,6 +6,7 @@
     "overview": "Download network/studio artwork from a custom repository",
     "owner": "Entree3k",
     "category": "Metadata",
+    "imageUrl": "https://raw.githubusercontent.com/Entree3k/Network-Studio-Images/refs/heads/main/Assets/logo.png",
     "versions": [
       {
         "version": "1.0.0.0",
