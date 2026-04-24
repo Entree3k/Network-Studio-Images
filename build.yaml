@@ -2,7 +2,7 @@
 name: "Network Images"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 version: "1.0.0.0"
-targetAbi: "10.9.0.0"
+targetAbi: "10.11.0.0"
 framework: "net9.0"
 overview: "Download network/studio artwork from a custom repository"
 description: >
