@@ -13,4 +13,4 @@ owner: "Entree3k"
 artifacts:
 - "Jellyfin.Plugin.NetworkImages.dll"
 changelog: >
-  Initial release
+  Release v1.0.0.0
