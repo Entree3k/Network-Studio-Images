@@ -15,7 +15,7 @@ A Jellyfin plugin that provides network/studio artwork from a configurable GitHu
 2. Navigate to **Plugins** > **Repositories**
 3. Add a new repository:
    - **Name:** `Network Images`
-   - **URL:** `https://raw.githubusercontent.com/Entree3k/Jellyfin/main/manifest.json`
+   - **URL:** `https://raw.githubusercontent.com/Entree3k/Network-Studio-Images/refs/heads/main/manifest.json`
 4. Go to **Catalog** and install **Network Images**
 5. Restart Jellyfin
 
