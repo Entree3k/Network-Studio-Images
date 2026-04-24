@@ -6,7 +6,7 @@ on:
       version:
         description: 'Version number, for example 1.0.0.1'
         required: true
-        default: '1.0.0.0'
+        default: '1.0.0.1'
 
 env:
   ARTIFACT_NAME: network-images-${{ inputs.version }}.zip
