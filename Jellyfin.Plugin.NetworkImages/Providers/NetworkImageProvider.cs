@@ -75,8 +75,8 @@ public class NetworkImageProvider : IRemoteImageProvider
 
         var imageInfos = new List<RemoteImageInfo>();
 
-        // URL pattern: {repoUrl}/studios/{machine-name}/{type}.{ext}
-        var urlTemplate = repoUrl + "/studios/{0}/{1}.{2}";
+        // URL pattern: {repoUrl}/{machine-name}/{type}.{ext}
+        var urlTemplate = repoUrl + "/{0}/{1}.{2}";
 
         foreach (var ext in match.Artwork.Primary)
         {
