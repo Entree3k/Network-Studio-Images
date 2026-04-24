@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -22,6 +23,8 @@ namespace Jellyfin.Plugin.NetworkImages.Providers;
 /// </summary>
 public class NetworkImageProvider : IRemoteImageProvider
 {
+    private const string ProviderName = "Network Images";
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMemoryCache _memoryCache;
     private readonly ILogger<NetworkImageProvider> _logger;
@@ -44,14 +47,14 @@ public class NetworkImageProvider : IRemoteImageProvider
     }
 
     /// <inheritdoc />
-    public string Name => "Network Image Provider";
+    public string Name => ProviderName;
 
     /// <inheritdoc />
     public bool Supports(BaseItem item) => item is Studio;
 
     /// <inheritdoc />
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
-        => [ImageType.Primary, ImageType.Thumb];
+        => [ImageType.Thumb];
 
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
@@ -65,7 +68,7 @@ public class NetworkImageProvider : IRemoteImageProvider
         repoUrl = repoUrl.TrimEnd('/');
         var jsonUrl = repoUrl + "/studios.json";
 
-        var studios = await GetStudios(jsonUrl).ConfigureAwait(false);
+        var studios = await GetStudios(jsonUrl, cancellationToken).ConfigureAwait(false);
         var match = FindMatch(item, studios);
 
         if (match?.Artwork == null)
@@ -74,27 +77,8 @@ public class NetworkImageProvider : IRemoteImageProvider
         }
 
         var imageInfos = new List<RemoteImageInfo>();
-
-        // URL pattern: {repoUrl}/{machine-name}/{type}.{ext}
-        var urlTemplate = repoUrl + "/{0}/{1}.{2}";
-
-        foreach (var ext in match.Artwork.Primary)
-        {
-            imageInfos.Add(new RemoteImageInfo
-            {
-                Type = ImageType.Primary,
-                Url = string.Format(CultureInfo.InvariantCulture, urlTemplate, match.MachineName, "primary", ext)
-            });
-        }
-
-        foreach (var ext in match.Artwork.Thumb)
-        {
-            imageInfos.Add(new RemoteImageInfo
-            {
-                Type = ImageType.Thumb,
-                Url = string.Format(CultureInfo.InvariantCulture, urlTemplate, match.MachineName, "thumb", ext)
-            });
-        }
+        await AddExistingImages(imageInfos, repoUrl, match, ImageType.Thumb, match.Artwork.Thumb, cancellationToken)
+            .ConfigureAwait(false);
 
         return imageInfos;
     }
@@ -145,7 +129,119 @@ public class NetworkImageProvider : IRemoteImageProvider
         return null;
     }
 
-    private async Task<IReadOnlyList<StudioDto>> GetStudios(string jsonUrl)
+    private async Task AddExistingImages(
+        List<RemoteImageInfo> imageInfos,
+        string repoUrl,
+        StudioDto studio,
+        ImageType imageType,
+        IReadOnlyList<string> extensions,
+        CancellationToken cancellationToken)
+    {
+        var seenExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var extension in extensions)
+        {
+            var normalizedExtension = NormalizeExtension(extension);
+            if (normalizedExtension == null || !seenExtensions.Add(normalizedExtension))
+            {
+                continue;
+            }
+
+            var url = BuildImageUrl(repoUrl, studio.MachineName, imageType, normalizedExtension);
+            if (!await ImageExists(url, cancellationToken).ConfigureAwait(false))
+            {
+                continue;
+            }
+
+            imageInfos.Add(new RemoteImageInfo
+            {
+                ProviderName = ProviderName,
+                Type = imageType,
+                Url = url,
+                ThumbnailUrl = url
+            });
+        }
+    }
+
+    private async Task<bool> ImageExists(string url, CancellationToken cancellationToken)
+    {
+        var cacheKey = "NetworkImages:Exists:" + url;
+        if (_memoryCache.TryGetValue(cacheKey, out bool cached))
+        {
+            return cached;
+        }
+
+        var exists = await ImageExistsUncached(url, cancellationToken).ConfigureAwait(false);
+        _memoryCache.Set(cacheKey, exists, _cacheExpire);
+        return exists;
+    }
+
+    private async Task<bool> ImageExistsUncached(string url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, new Uri(url));
+            using var response = await _httpClientFactory
+                .CreateClient(NamedClient.Default)
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (response.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.Forbidden)
+            {
+                return await ImageCanBeDownloaded(url, cancellationToken).ConfigureAwait(false);
+            }
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException e)
+        {
+            _logger.LogDebug(e, "Error checking image URL {Url}", url);
+            return false;
+        }
+    }
+
+    private async Task<bool> ImageCanBeDownloaded(string url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+            using var response = await _httpClientFactory
+                .CreateClient(NamedClient.Default)
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException e)
+        {
+            _logger.LogDebug(e, "Error checking image URL {Url}", url);
+            return false;
+        }
+    }
+
+    private static string BuildImageUrl(string repoUrl, string machineName, ImageType imageType, string extension)
+    {
+        var imageName = imageType == ImageType.Thumb ? "thumb" : "primary";
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0}/{1}/{2}.{3}",
+            repoUrl,
+            Uri.EscapeDataString(machineName),
+            imageName,
+            Uri.EscapeDataString(extension));
+    }
+
+    private static string? NormalizeExtension(string? extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return null;
+        }
+
+        var normalizedExtension = extension.Trim().TrimStart('.');
+        return normalizedExtension.Length == 0 ? null : normalizedExtension;
+    }
+
+    private async Task<IReadOnlyList<StudioDto>> GetStudios(string jsonUrl, CancellationToken cancellationToken)
     {
         if (_memoryCache.TryGetValue(jsonUrl, out IReadOnlyList<StudioDto>? cached) && cached is not null)
         {
@@ -156,7 +252,7 @@ public class NetworkImageProvider : IRemoteImageProvider
         {
             var studios = await _httpClientFactory
                 .CreateClient(NamedClient.Default)
-                .GetFromJsonAsync<IReadOnlyList<StudioDto>>(jsonUrl)
+                .GetFromJsonAsync<IReadOnlyList<StudioDto>>(jsonUrl, cancellationToken)
                 .ConfigureAwait(false);
 
             if (studios != null)
