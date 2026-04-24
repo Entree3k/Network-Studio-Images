@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/Entree3k/Network-Studio-Images/refs/heads/main/Assets/logo.png",
     "versions": [
       {
-        "version": "1.0.0.0",
-        "changelog": "Release v1.0.0.0",
+        "version": "1.0.0.1",
+        "changelog": "Release v1.0.0.1",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/Entree3k/Network-Studio-Images/releases/download/v1.0.0.0/network-images-1.0.0.0.zip",
-        "checksum": "49C266891B56E45E10E6F24DFD8926F7",
-        "timestamp": "2026-04-24T14:46:02Z"
+        "sourceUrl": "https://github.com/Entree3k/Network-Studio-Images/releases/download/v1.0.0.1/network-images-1.0.0.1.zip",
+        "checksum": "B2921F5AB912D4427D42AFC8820F4EB6",
+        "timestamp": "2026-04-24T15:24:33Z"
       }
     ]
   }
