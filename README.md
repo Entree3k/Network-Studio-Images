@@ -1,13 +1,12 @@
-# Jellyfin Network Images Plugin
+# Network Studio Images Plugin
 
-A Jellyfin plugin that provides network/studio artwork from a configurable GitHub repository.
+A Jellyfin plugin that provides Network artwork from a configurable GitHub repository.
 
 ## Features
 
 - Provides Primary and Thumb images for TV network studios
 - Matches studios by TMDB provider ID (primary), TVDB provider ID (secondary), or studio name (fallback)
 - Configurable repository URL with a default artwork repository included
-- 5-minute in-memory cache for repository data
 
 ## Installation
 
@@ -25,7 +24,7 @@ After installation:
 
 1. Go to **Plugins** in the Dashboard
 2. Click the three dot menu on **Network Images** and select **Settings**
-3. The **Repository URL** defaults to the included artwork repository. You can change it to any compatible repository.
+3. The **Repository URL** is my own image repo at https://github.com/Entree3k/Jellyfin
 
 ## Repository Format
 
