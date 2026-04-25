@@ -1,3 +1,5 @@
+<img width="1500" height="1000" alt="logo" src="https://github.com/user-attachments/assets/d47a0162-81ab-4977-8abb-c295c8413a95" />
+
 # Network Studio Images Plugin
 
 A Jellyfin plugin that provides Network artwork from a configurable GitHub repository.
